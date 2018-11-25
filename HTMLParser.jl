@@ -163,6 +163,29 @@ struct HTML
 	end
 end
 
+#==
+
+	function proc(t::StartTag)
+		attr(k) = get(t.attrs, k, "")
+		vtable = Dict(
+			"a"=>()->begin end,
+			"td"=>()->begin end
+			)
+		get(vtable, t.name, ()->nothing)();
+	end
+	
+	proc(t::Data) = line = "$line$(t.data)";
+
+	function proc(t::EndTag)
+	end
+	
+	proc(b::Block) = nothing
+	
+		
+	foreach(proc, HTMLParser.HTML(t).blks)
+
+==#
+
 
 ###
 end
