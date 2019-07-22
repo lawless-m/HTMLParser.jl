@@ -1,2 +1,2 @@
 # HTMLParser.jl
-Native Julia HTML Parser inspired by Pythons HTMLParser
+Native Julia HTML Parser inspired by Python's HTMLParser
