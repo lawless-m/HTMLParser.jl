@@ -1,0 +1,5 @@
+language: julia
+os:               # Travis CI has support for Linux and macOS
+  - linux
+julia:            # Julia versions to run tests on
+  - 1.1

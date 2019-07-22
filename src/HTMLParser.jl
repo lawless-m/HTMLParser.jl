@@ -1,5 +1,5 @@
 module HTMLParser
-# a transliteration of 
+# a transliteration of
 # https://github.com/enthought/Python-2.7.3/blob/master/Lib/HTMLParser.py
 
 export HTML, Block, StartTag, EndTag, Comment, Data, Script
@@ -32,13 +32,13 @@ function txt2attrs(at)
 	if length(at) == 1
 		return attrs
 	end
-	
+
 	function key_value(t)
 		k = ""
 		v = ""
 		ks = 1
 		t == "" && (return k, v, ks)
-		
+
 		# skip whitespace
 		while ks < length(t) && t[ks] in [' ', '\n', '\r']
 			ks += 1
@@ -47,27 +47,27 @@ function txt2attrs(at)
 		if ks == length(t) || t[ks] == '/'
 			return k, v, ks+1
 		end
-		
-		# skip non whitespace (ignore invalid attribute name errors) 
+
+		# skip non whitespace (ignore invalid attribute name errors)
 		ke = ks+1
 		while ke < length(t) && !(t[ke] in [' ', '=', '/', '\n', '\r'])
 			ke += 1
 		end
-		
-		
+
+
 		# exit if at end of string or terminator / found (e.g. <option value="k" selected/>
 		(ke == length(t)) && (return t[ks:ke], t[ks:ke], ke+1)
-		
-		k = t[ks:ke-1]		
-		
+
+		k = t[ks:ke-1]
+
 		(t[ke] == '/') && (return k, k, ke+1)
-		
+
 		# skip whitespace
 		vs = ke+1
 		while vs < length(t) && t[vs] in [' ' '\n' '\r' '=']
 			vs += 1
 		end
-		
+
 		if t[vs] in ['"', '\'']
 			delim = [t[vs]]
 			vs += 1
@@ -77,7 +77,7 @@ function txt2attrs(at)
 		else
 			delim = [' ' '/']
 		end
-		
+
 		ve = vs+1
 		while ve < length(t) && !(t[ve] in delim)
 			ve += 1
@@ -95,7 +95,7 @@ function txt2attrs(at)
 
 		return k, v, ve+1
 	end
-	
+
 	k, v, P = key_value(at[2])
 	attrs[k] = v
 	while P < at[2].endof
@@ -103,7 +103,7 @@ function txt2attrs(at)
 		attrs[k] = v
 		P += p
 	end
-	
+
 	attrs
 end
 
@@ -112,10 +112,10 @@ struct HTML
 	function HTML(raw::String)
 		inscript = 0
 		blks = Vector{Block}()
-		
+
 		lst = split(raw, '<', keepempty=false)
 		for lt in lst
-			
+
 			# endtag
 			if lt[1] == '/'
 				bt = split(lt[2:end], '>')
@@ -131,7 +131,7 @@ struct HTML
 				end
 				continue
 			end
-		
+
 			# comment
 			if length(lt) > 2 && lt[1:3] == "!--"
 				bt = split(lt[4:end], '>')
@@ -139,9 +139,9 @@ struct HTML
 				bt[2] != "" && push!(blks, Data(bt[2]))
 				continue
 			end
-	
+
 			inscript > 0 && continue
-			
+
 			# open tag
 
 			bt = split(lt[1:end], '>')
@@ -164,6 +164,7 @@ struct HTML
 end
 
 #==
+example for usage
 
 	function proc(t::StartTag)
 		attr(k) = get(t.attrs, k, "")
@@ -173,15 +174,15 @@ end
 			)
 		get(vtable, t.name, ()->nothing)();
 	end
-	
+
 	proc(t::Data) = line = "$line$(t.data)";
 
 	function proc(t::EndTag)
 	end
-	
+
 	proc(b::Block) = nothing
-	
-		
+
+
 	foreach(proc, HTMLParser.HTML(t).blks)
 
 ==#
