@@ -1,12 +1,10 @@
 name = "HTMLParser"
-uuid = "b4b65fde-acad-11e9-1657-e5fb27898dff"
-authors = ["Matt Lawless"]
+uuid = "a5f9367a-d203-4843-a961-50db786322b5"
+authors = ["Matthew Heath <Matthew.Heath@wrenkitchens.com> and contributors"]
 version = "0.1.0"
 
 [compat]
-julia = "^1"
-
-[deps]
+julia = "1.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

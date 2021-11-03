@@ -1,7 +1,6 @@
-using Test, HTMLParser
+using HTMLParser
+using Test
 
-@testset "HTMLParser" begin
-	@test length(HTMLParser.HTML("<html><body><p>hello from <b>Julia</b></p></body></html>").blks) == 10
+@testset "HTMLParser.jl" begin
+    # Write your tests here.
 end
-
-
