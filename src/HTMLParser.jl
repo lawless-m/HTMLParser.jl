@@ -2,7 +2,7 @@ module HTMLParser
 # a transliteration of
 # https://github.com/enthought/Python-2.7.3/blob/master/Lib/HTMLParser.py
 
-export HTML, Block, StartTag, EndTag, Comment, Data, Script, asHTML
+export Blocklist, Block, StartTag, EndTag, Comment, Data, Script, asHTML
 
 abstract type Block end
 
