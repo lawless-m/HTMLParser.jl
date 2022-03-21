@@ -43,6 +43,7 @@ function txt2attrs(at)
 		while ks < length(t) && t[ks] in [' ', '\n', '\r']
 			ks += 1
 		end
+
 		# if end of string or terminator /
 		if ks == length(t) || t[ks] == '/'
 			return k, v, ks+1
@@ -53,7 +54,6 @@ function txt2attrs(at)
 		while ke < length(t) && !(t[ke] in [' ', '=', '/', '\n', '\r'])
 			ke += 1
 		end
-
 
 		# exit if at end of string or terminator / found (e.g. <option value="k" selected/>
 		(ke == length(t)) && (return t[ks:ke], t[ks:ke], ke+1)
@@ -126,8 +126,9 @@ Create a vector of Blocks, each block has an HTML tag, maybe some attributes and
 	inscript = 0
 	
 	parts = split(raw, '<', keepempty=false)
-	for pt in 1:length(parts)
+	for pt in 1:length(parts) # use indexing for lookahead
 		lt = parts[pt]
+
 		# endtag
 		if lt[1] == '/'
 			bt = split(lt[2:end], '>')
@@ -175,6 +176,7 @@ Create a vector of Blocks, each block has an HTML tag, maybe some attributes and
 			continue
 		end
 
+		# watch out for ".pagination>li>a" ruining your day
 		if pt < length(parts) && length(parts[pt+1]) > 7 && parts[pt+1][1:7] == "/style>"
 			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
 			bt[2] != "" && push!(bl.blks, Data(bt[2]))	
@@ -185,7 +187,7 @@ Create a vector of Blocks, each block has an HTML tag, maybe some attributes and
 		length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
 	
 	end 
-	return bl
+	bl
 end
 
 fromIO(io) = fromText(read(io, String))
