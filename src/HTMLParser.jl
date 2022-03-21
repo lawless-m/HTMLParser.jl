@@ -116,13 +116,18 @@ end
 
 
 function fromText(raw)
+	"""
+	Blocklist(txt::AbstractString) = fromText(txt)
+	Blocklist(io::IO) = fromIO(io)
+
+Create a vector of Blocks, each block has an HTML tag, maybe some attributes and maybe a body
+	"""
 	bl = Blocklist()
 	inscript = 0
 	
-
-	lst = split(raw, '<', keepempty=false)
-	for lt in lst
-
+	parts = split(raw, '<', keepempty=false)
+	for pt in 1:length(parts)
+		lt = parts[pt]
 		# endtag
 		if lt[1] == '/'
 			bt = split(lt[2:end], '>')
@@ -153,18 +158,32 @@ function fromText(raw)
 
 		bt = split(lt[1:end], '>')
 		att = split(bt[1], ' ', limit=2)
+
 		if att[1] == ""
 			continue
-		elseif att[1] == "script"
+		end
+
+		if att[1] == "script"
 			inscript = att[1].offset
-		elseif endswith(bt[end], "/")
+			continue
+		end
+		
+		if endswith(bt[end], "/")
 			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
 			push!(bl.blks, EndTag(att[1]))
 			length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
-		else
-			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
-			length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
+			continue
 		end
+
+		if pt < length(parts) && length(parts[pt+1]) > 7 && parts[pt+1][1:7] == "/style>"
+			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
+			bt[2] != "" && push!(bl.blks, Data(bt[2]))	
+			continue
+		end
+		
+		push!(bl.blks, StartTag(att[1], txt2attrs(att)))
+		length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
+	
 	end 
 	return bl
 end
@@ -172,7 +191,12 @@ end
 fromIO(io) = fromText(read(io, String))
 
 function asHTML(io, bs::Blocklist)
+"""
+	asHTML(io, bs::Blocklist)
 
+	write the blocklist as HTML to the IO given
+
+"""
 	function proc(st::StartTag)
 		print(io, "<$(st.name)")
 		if st.name == "!DOCTYPE"
