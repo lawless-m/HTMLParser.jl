@@ -19,7 +19,7 @@ struct Comment <: Block
 	contents::String
 end
 
-struct Data <: Block
+mutable struct Data <: Block
 	data::String
 end
 
