@@ -2,7 +2,7 @@ module HTMLParser
 # a transliteration of
 # https://github.com/enthought/Python-2.7.3/blob/master/Lib/HTMLParser.py
 
-export HTML, Block, StartTag, EndTag, Comment, Data, Script
+export HTML, Block, StartTag, EndTag, Comment, Data, Script, asHTML
 
 abstract type Block end
 
@@ -98,7 +98,7 @@ function txt2attrs(at)
 
 	k, v, P = key_value(at[2])
 	attrs[k] = v
-	while P < at[2].endof
+	while P < length(at[2])
 		k, v, p = key_value(at[2][P:end])
 		attrs[k] = v
 		P += p
@@ -107,86 +107,107 @@ function txt2attrs(at)
 	attrs
 end
 
-struct HTML
+struct Blocklist
 	blks::Vector{Block}
-	function HTML(raw::String)
-		inscript = 0
-		blks = Vector{Block}()
+	Blocklist() = new(Block[])
+	Blocklist(txt::AbstractString) = fromText(txt)
+	Blocklist(io::IO) = fromIO(io)
+end
 
-		lst = split(raw, '<', keepempty=false)
-		for lt in lst
 
-			# endtag
-			if lt[1] == '/'
-				bt = split(lt[2:end], '>')
-				if inscript > 0
-					if bt[1] == "script"
-						push!(blks, Script(raw[inscript:bt[1].offset+7]))
-						bt[2] != "" && push!(blks, Data(bt[2]))
-						inscript = 0
-					end
-				else
-					push!(blks, EndTag(bt[1]))
-					bt[2] != "" && push!(blks, Data(bt[2]))
+function fromText(raw)
+	bl = Blocklist()
+	inscript = 0
+	
+
+	lst = split(raw, '<', keepempty=false)
+	for lt in lst
+
+		# endtag
+		if lt[1] == '/'
+			bt = split(lt[2:end], '>')
+			if inscript > 0
+				if bt[1] == "script"
+					push!(bl.blks, Script(raw[inscript:bt[1].offset+7]))
+					bt[2] != "" && push!(bl.blks, Data(bt[2]))
+					inscript = 0
 				end
-				continue
-			end
-
-			# comment
-			if length(lt) > 2 && lt[1:3] == "!--"
-				bt = split(lt[4:end], '>')
-				push!(blks, Comment(bt[1][1:end-3]))
-				bt[2] != "" && push!(blks, Data(bt[2]))
-				continue
-			end
-
-			inscript > 0 && continue
-
-			# open tag
-
-			bt = split(lt[1:end], '>')
-			att = split(bt[1], ' ', limit=2)
-			if att[1] == ""
-				continue
-			elseif att[1] == "script"
-				inscript = att[1].offset
-			elseif endswith(bt[end], "/")
-				push!(blks, StartTag(att[1], txt2attrs(att)))
-				push!(blks, EndTag(att[1]))
-				length(bt) == 2 && bt[2] != "" && push!(blks, Data(bt[2]))
 			else
-				push!(blks, StartTag(att[1], txt2attrs(att)))
-				length(bt) == 2 && bt[2] != "" && push!(blks, Data(bt[2]))
+				push!(bl.blks, EndTag(bt[1]))
+				bt[2] != "" && push!(bl.blks, Data(bt[2]))
+			end
+			continue
+		end
+
+		# comment
+		if length(lt) > 2 && lt[1:3] == "!--"
+			bt = split(lt[4:end], '>')
+			push!(bl.blks, Comment(bt[1][1:end-3]))
+			bt[2] != "" && push!(bl.blks, Data(bt[2]))
+			continue
+		end
+
+		inscript > 0 && continue
+
+		# open tag
+
+		bt = split(lt[1:end], '>')
+		att = split(bt[1], ' ', limit=2)
+		if att[1] == ""
+			continue
+		elseif att[1] == "script"
+			inscript = att[1].offset
+		elseif endswith(bt[end], "/")
+			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
+			push!(bl.blks, EndTag(att[1]))
+			length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
+		else
+			push!(bl.blks, StartTag(att[1], txt2attrs(att)))
+			length(bt) == 2 && bt[2] != "" && push!(bl.blks, Data(bt[2]))
+		end
+	end 
+	return bl
+end
+
+fromIO(io) = fromText(read(io, String))
+
+function asHTML(io, bs::Blocklist)
+
+	function proc(st::StartTag)
+		print(io, "<$(st.name)")
+		if st.name == "!DOCTYPE"
+			print(io, " html")
+		elseif length(st.attrs) > 0
+			for (k, v) in st.attrs
+				if '"' in v
+					print(io, " $k='$v'") # no xss protection
+				else
+					print(io, " $k=\"$v\"") # no xss protection
+				end
 			end
 		end
-		new(blks)
+		print(io, ">")
+	end
+
+	function proc(et::EndTag)
+		println(io, "</$(et.name)>")
+	end
+
+	function proc(c::Comment)
+		println(io, "<!-- $(c.contents) -->")
+	end
+
+	function proc(d::Data)
+		print(io, d.data)
+	end
+
+	function proc(s::Script)
+		println(io, s.code)
+	end
+
+	for b in bs.blks
+		proc(b)
 	end
 end
 
-#==
-example for usage
-
-	function proc(t::StartTag)
-		attr(k) = get(t.attrs, k, "")
-		vtable = Dict(
-			"a"=>()->begin end,
-			"td"=>()->begin end
-			)
-		get(vtable, t.name, ()->nothing)();
-	end
-
-	proc(t::Data) = line = "$line$(t.data)";
-
-	function proc(t::EndTag)
-	end
-
-	proc(b::Block) = nothing
-
-
-	foreach(proc, HTMLParser.HTML(t).blks)
-
-==#
-
-
-###
 end
